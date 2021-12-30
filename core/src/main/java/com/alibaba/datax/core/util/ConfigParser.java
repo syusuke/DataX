@@ -19,24 +19,44 @@ import java.util.Set;
 
 public final class ConfigParser {
     private static final Logger LOG = LoggerFactory.getLogger(ConfigParser.class);
+
     /**
      * 指定Job配置路径，ConfigParser会解析Job、Plugin、Core全部信息，并以Configuration返回
+     *
+     * @param jobPath 启动时的 job.json
      */
     public static Configuration parse(final String jobPath) {
+
+        // job.json 配置内容
         Configuration configuration = ConfigParser.parseJobConfig(jobPath);
 
+        /**
+         * 把 conf/core.json 和 job.json 合并
+         * <pre>
+         *     {
+         *      "common":{}
+         *      "core":{}
+         *      "entry":{}
+         *      "job":{}
+         *     }
+         * </pre>
+         */
+        // 合并对象 conf/core.json 的对象,相同以原来的为准
         configuration.merge(
                 ConfigParser.parseCoreConfig(CoreConstant.DATAX_CONF_PATH),
                 false);
+
+        // 下面为读取 reader 和 writer 的 name
         // todo config优化，只捕获需要的plugin
         String readerPluginName = configuration.getString(
                 CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
         String writerPluginName = configuration.getString(
                 CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
 
+        // 前置处理 插件名(可选)
         String preHandlerName = configuration.getString(
                 CoreConstant.DATAX_JOB_PREHANDLER_PLUGINNAME);
-
+        // 后置处理插件名(可选)
         String postHandlerName = configuration.getString(
                 CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINNAME);
 
@@ -44,15 +64,16 @@ public final class ConfigParser {
         pluginList.add(readerPluginName);
         pluginList.add(writerPluginName);
 
-        if(StringUtils.isNotEmpty(preHandlerName)) {
+        if (StringUtils.isNotEmpty(preHandlerName)) {
             pluginList.add(preHandlerName);
         }
-        if(StringUtils.isNotEmpty(postHandlerName)) {
+        if (StringUtils.isNotEmpty(postHandlerName)) {
             pluginList.add(postHandlerName);
         }
         try {
+            // 合并插件的配置信息,不更新现有配置,只添加
             configuration.merge(parsePluginConfig(new ArrayList<String>(pluginList)), false);
-        }catch (Exception e){
+        } catch (Exception e) {
             //吞掉异常，保持log干净。这里message足够。
             LOG.warn(String.format("插件[%s,%s]加载失败，1s后重试... Exception:%s ", readerPluginName, writerPluginName, e.getMessage()));
             try {
@@ -62,7 +83,28 @@ public final class ConfigParser {
             }
             configuration.merge(parsePluginConfig(new ArrayList<String>(pluginList)), false);
         }
-
+        /**
+         * 合并 plugin/plugin.json 到 plugin ,添加 path 字段
+         * <pre>
+         *     {
+         *      "common":{}
+         *      "core":{}
+         *      "entry":{}
+         *      "job":{}
+         *      "plugin":{
+         *          "reader":{
+         *            "mysqlreader": {
+         *                 "class": "com.alibaba.datax.plugin.reader.mysqlreader.MysqlReader",
+         *                 "description": "useScene: prod. mechanism: Jdbc connection using the database, execute select sql, retrieve data from the ResultSet. warn: The more you know about the database, the less problems you encounter.",
+         *                 "developer": "alibaba",
+         *                 "name": "mysqlreader",
+         *                 "path": "/Users/kerryzhang/Downloads/datax-dev/plugin/reader/mysqlreader"
+         *             }
+         *          }
+         *      }
+         *     }
+         * </pre>
+         */
         return configuration;
     }
 
@@ -71,9 +113,11 @@ public final class ConfigParser {
     }
 
     public static Configuration parseJobConfig(final String path) {
+        // 从 path 中读取 JSON 的内容
         String jobContent = getJobContent(path);
+        // 转换 config 对象
         Configuration config = Configuration.from(jobContent);
-
+        // 解密的
         return SecretUtil.decryptSecretKey(config);
     }
 
@@ -120,19 +164,21 @@ public final class ConfigParser {
 
         Set<String> replicaCheckPluginSet = new HashSet<String>();
         int complete = 0;
+
+        // reader 插件  plugin/reader
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_READER_HOME)) {
             Configuration eachReaderConfig = ConfigParser.parseOnePluginConfig(each, "reader", replicaCheckPluginSet, wantPluginNames);
-            if(eachReaderConfig!=null) {
+            if (eachReaderConfig != null) {
                 configuration.merge(eachReaderConfig, true);
                 complete += 1;
             }
         }
-
+        // writer 插件  plugin/writer
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_WRITER_HOME)) {
             Configuration eachWriterConfig = ConfigParser.parseOnePluginConfig(each, "writer", replicaCheckPluginSet, wantPluginNames);
-            if(eachWriterConfig!=null) {
+            if (eachWriterConfig != null) {
                 configuration.merge(eachWriterConfig, true);
                 complete += 1;
             }
@@ -154,7 +200,7 @@ public final class ConfigParser {
 
         String pluginPath = configuration.getString("path");
         String pluginName = configuration.getString("name");
-        if(!pluginSet.contains(pluginName)) {
+        if (!pluginSet.contains(pluginName)) {
             pluginSet.add(pluginName);
         } else {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_INIT_ERROR, "插件加载失败,存在重复插件:" + filePath);

@@ -44,17 +44,27 @@ public class TransformerRegistry {
     }
 
 
+    /**
+     * 加载
+     * @param transformers transformers List 里面包含了 name
+     */
     public static void loadTransformerFromLocalStorage(List<String> transformers) {
 
+        // list() 方法是得到 local_storage/transformer 文件名,不包含全路径.
+        // 加载 local_storage/transformer 下的三方 transformer
         String[] paths = new File(CoreConstant.DATAX_STORAGE_TRANSFORMER_HOME).list();
         if (null == paths) {
+            // 目录
             return;
         }
 
         for (final String each : paths) {
             try {
+                // 如果 transformers == null, 加载目录下的所有 transformer
+                // 否则只加载定义的..
                 if (transformers == null || transformers.contains(each)) {
-                    loadTransformer(each);
+                    // 文件夹名字 和 transformer 的名字必须一样
+                    loadTransformer(each);      // each 为 local_storage/transformer 下的文件夹
                 }
             } catch (Exception e) {
                 LOG.error(String.format("skip transformer(%s) loadTransformer has Exception(%s)", each, e.getMessage()), e);
@@ -64,9 +74,11 @@ public class TransformerRegistry {
     }
 
     public static void loadTransformer(String each) {
+        // local_storage/transformer/XXX 文件夹
         String transformerPath = CoreConstant.DATAX_STORAGE_TRANSFORMER_HOME + File.separator + each;
         Configuration transformerConfiguration;
         try {
+            // 每个文件下都有一个 transformer.json {"name": "", "class": ""}
             transformerConfiguration = loadTransFormerConfig(transformerPath);
         } catch (Exception e) {
             LOG.error(String.format("skip transformer(%s),load transformer.json error, path = %s, ", each, transformerPath), e);
@@ -83,11 +95,15 @@ public class TransformerRegistry {
         if (!each.equals(funName)) {
             LOG.warn(String.format("transformer(%s) name not match transformer.json config name[%s], will ignore json's name, path = %s, config = %s", each, funName, transformerPath, transformerConfiguration.beautify()));
         }
+
+        // local_storage/transformer/XXX 文件夹
         JarLoader jarLoader = new JarLoader(new String[]{transformerPath});
 
         try {
             Class<?> transformerClass = jarLoader.loadClass(className);
             Object transformer = transformerClass.newInstance();
+
+            // transformer 实例
             if (ComplexTransformer.class.isAssignableFrom(transformer.getClass())) {
                 ((ComplexTransformer) transformer).setTransformerName(each);
                 registComplexTransformer((ComplexTransformer) transformer, jarLoader, false);

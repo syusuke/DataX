@@ -44,14 +44,17 @@ public abstract class AbstractScheduler {
         this.jobId = configurations.get(0).getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
 
+        // 没有配置就没有限制脏数据的数量
         errorLimit = new ErrorRecordChecker(configurations.get(0));
 
         /**
-         * 给 taskGroupContainer 的 Communication 注册
+         * 给 taskGroupContainer 的 Communication 注册(kerry: 用于控制台打印信息,获取任务状态和)
          */
         this.containerCommunicator.registerCommunication(configurations);
 
         int totalTasks = calculateTaskCount(configurations);
+        // 启动所有的 taskGroup
+
         startAllTaskGroup(configurations);
 
         Communication lastJobContainerCommunication = new Communication();

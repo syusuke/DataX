@@ -26,7 +26,9 @@ public abstract class ProcessInnerScheduler extends AbstractScheduler {
                 .newFixedThreadPool(configurations.size());
 
         for (Configuration taskGroupConfiguration : configurations) {
+            // taskGroupConfiguration 是 core.json job.json + 插件自己的 配置
             TaskGroupContainerRunner taskGroupContainerRunner = newTaskGroupContainerRunner(taskGroupConfiguration);
+            // TaskGroupContainerRunner.run()  -> TaskGroupContainer.start
             this.taskGroupContainerExecutorService.execute(taskGroupContainerRunner);
         }
 

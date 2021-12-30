@@ -20,6 +20,7 @@ public class StandAloneJobContainerCommunicator extends AbstractContainerCommuni
 
     public StandAloneJobContainerCommunicator(Configuration configuration) {
         super(configuration);
+        // 同一个 jobid
         super.setCollector(new ProcessInnerCollector(configuration.getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID)));
         super.setReporter(new ProcessInnerReporter());

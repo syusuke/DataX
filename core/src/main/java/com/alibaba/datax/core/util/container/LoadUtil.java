@@ -5,6 +5,8 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.AbstractJobPlugin;
 import com.alibaba.datax.common.plugin.AbstractPlugin;
 import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
+import com.alibaba.datax.common.spi.Reader;
+import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.taskgroup.runner.AbstractRunner;
 import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
@@ -68,6 +70,7 @@ public class LoadUtil {
 
     private static Configuration getPluginConf(PluginType pluginType,
                                                String pluginName) {
+        // 通过 pluginType.pluginName 获取插件的配置
         Configuration pluginConf = pluginRegisterCenter
                 .getConfiguration(generatePluginKey(pluginType, pluginName));
 
@@ -86,16 +89,20 @@ public class LoadUtil {
      *
      * @param pluginType
      * @param pluginName
-     * @return
+     * @return {@link Reader.Job},{@link Reader.Task},{@link Writer.Job},{@link Writer.Task} 子类(必须是内部类)的实例
      */
     public static AbstractJobPlugin loadJobPlugin(PluginType pluginType,
                                                   String pluginName) {
+
+        // find class
         Class<? extends AbstractPlugin> clazz = LoadUtil.loadPluginClass(
                 pluginType, pluginName, ContainerType.Job);
 
         try {
+            // 反射创建 实例
             AbstractJobPlugin jobPlugin = (AbstractJobPlugin) clazz
                     .newInstance();
+            // 把配置信息传到这里面去
             jobPlugin.setPluginConf(getPluginConf(pluginType, pluginName));
             return jobPlugin;
         } catch (Exception e) {
@@ -169,6 +176,8 @@ public class LoadUtil {
         Configuration pluginConf = getPluginConf(pluginType, pluginName);
         JarLoader jarLoader = LoadUtil.getJarLoader(pluginType, pluginName);
         try {
+            // 这里就是为什么在定义 plugin 时,Reader/Writer 时必须使用 内部类了,并且名字必须为 Task/Job
+            // 如: com.alibaba.datax.plugin.reader.mysqlreader.MysqlReader 类中有 Task 和 Job 内部类
             return (Class<? extends AbstractPlugin>) jarLoader
                     .loadClass(pluginConf.getString("class") + "$"
                             + pluginRunType.value());
@@ -179,8 +188,10 @@ public class LoadUtil {
 
     public static synchronized JarLoader getJarLoader(PluginType pluginType,
                                                       String pluginName) {
+        // 获取 插件的配置 pluginType: reader/writer
         Configuration pluginConf = getPluginConf(pluginType, pluginName);
 
+        // generatePluginKey ==> plugin.reader.pluginName or plugin.writer.pluginName
         JarLoader jarLoader = jarLoaderCenter.get(generatePluginKey(pluginType,
                 pluginName));
         if (null == jarLoader) {

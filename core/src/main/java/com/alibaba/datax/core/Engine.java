@@ -33,28 +33,35 @@ import java.util.regex.Pattern;
 public class Engine {
     private static final Logger LOG = LoggerFactory.getLogger(Engine.class);
 
+    /**
+     * 从 datax.py mode 参数传进来,默认 standalone
+     */
     private static String RUNTIME_MODE;
 
     /* check job model (job/task) first */
     public void start(Configuration allConf) {
-
+        // allConf 全部配置信息 core.json job.json reader&writer.plugin.json
         // 绑定column转换信息
         ColumnCast.bind(allConf);
 
         /**
-         * 初始化PluginLoader，可以获取各种插件配置
+         * 初始化PluginLoader，可以获取各种插件配置 只是把参数传到 LoadUtil
          */
         LoadUtil.bind(allConf);
 
+        // 从 conf/core.json 读取 core.container.model 变量,默认没有配置 isJob 默认 true
         boolean isJob = !("taskGroup".equalsIgnoreCase(allConf
                 .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
         //JobContainer会在schedule后再行进行设置和调整值
-        int channelNumber =0;
+        int channelNumber = 0;
+        // 运行容器
         AbstractContainer container;
         long instanceId;
         int taskGroupId = -1;
         if (isJob) {
+            // set core.container.job.mode 运行模式. 默认: standalone
             allConf.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, RUNTIME_MODE);
+            // Job 运行容器
             container = new JobContainer(allConf);
             instanceId = allConf.getLong(
                     CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
@@ -69,28 +76,29 @@ public class Engine {
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
         }
 
-        //缺省打开perfTrace
+        // 缺省打开perfTrace
         boolean traceEnable = allConf.getBool(CoreConstant.DATAX_CORE_CONTAINER_TRACE_ENABLE, true);
         boolean perfReportEnable = allConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_PERFLOG, true);
 
         //standlone模式的datax shell任务不进行汇报
-        if(instanceId == -1){
+        if (instanceId == -1) {
             perfReportEnable = false;
         }
 
         int priority = 0;
         try {
             priority = Integer.parseInt(System.getenv("SKYNET_PRIORITY"));
-        }catch (NumberFormatException e){
-            LOG.warn("prioriy set to 0, because NumberFormatException, the value is: "+System.getProperty("PROIORY"));
+        } catch (NumberFormatException e) {
+            LOG.warn("prioriy set to 0, because NumberFormatException, the value is: " + System.getProperty("PROIORY"));
         }
 
         Configuration jobInfoConfig = allConf.getConfiguration(CoreConstant.DATAX_JOB_JOBINFO);
         //初始化PerfTrace
         PerfTrace perfTrace = PerfTrace.getInstance(isJob, instanceId, taskGroupId, priority, traceEnable);
-        perfTrace.setJobInfo(jobInfoConfig,perfReportEnable,channelNumber);
-        container.start();
+        perfTrace.setJobInfo(jobInfoConfig, perfReportEnable, channelNumber);
 
+        // 启动 JobContainer 任务从这里开始 JobContainer(单机是这个)/TaskGroupContainer
+        container.start();
     }
 
 
@@ -102,12 +110,12 @@ public class Engine {
 
         filterSensitiveConfiguration(jobContent);
 
-        jobConfWithSetting.set("content",jobContent);
+        jobConfWithSetting.set("content", jobContent);
 
         return jobConfWithSetting.beautify();
     }
 
-    public static Configuration filterSensitiveConfiguration(Configuration configuration){
+    public static Configuration filterSensitiveConfiguration(Configuration configuration) {
         Set<String> keys = configuration.getKeys();
         for (final String key : keys) {
             boolean isSensitive = StringUtils.endsWithIgnoreCase(key, "password")
@@ -128,6 +136,7 @@ public class Engine {
         BasicParser parser = new BasicParser();
         CommandLine cl = parser.parse(options, args);
 
+        // 这个参数就是 python bin/datax.py job/job.json 中的 job/job.json 文件
         String jobPath = cl.getOptionValue("job");
 
         // 如果用户没有明确指定jobid, 则 datax.py 会指定 jobid 默认值为-1
@@ -154,14 +163,20 @@ public class Engine {
             // 如果不是 standalone 模式，那么 jobId 一定不能为-1
             throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "非 standalone 模式必须在 URL 中提供有效的 jobId.");
         }
+
+        // LOG.info("Engine.ParamsInputJobId: {}", jobId);
+
         configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
+
+        // 所有已加载的配置
+        LOG.info("Engine.Configuration: {}", configuration.toJSON());
 
         //打印vmInfo
         VMInfo vmInfo = VMInfo.getVmInfo();
         if (vmInfo != null) {
             LOG.info(vmInfo.toString());
         }
-
+        // 打印配置JSON
         LOG.info("\n" + Engine.filterJobConfiguration(configuration) + "\n");
 
         LOG.debug(configuration.toJSON());
@@ -174,8 +189,8 @@ public class Engine {
 
     /**
      * -1 表示未能解析到 jobId
-     *
-     *  only for dsc & ds & datax 3 update
+     * <p>
+     * only for dsc & ds & datax 3 update
      */
     private static long parseJobIdFromUrl(List<String> patternStringList, String url) {
         long result = -1;

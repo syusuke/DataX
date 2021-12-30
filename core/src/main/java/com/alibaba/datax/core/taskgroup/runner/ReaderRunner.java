@@ -32,6 +32,7 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
     public void run() {
         assert null != this.recordSender;
 
+        // 子实例,内部类
         Reader.Task taskReader = (Reader.Task) this.getPlugin();
 
         //统计waitWriterTime，并且在finally才end。
@@ -54,6 +55,7 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
             LOG.debug("task reader starts to read ...");
             PerfRecord dataPerfRecord = new PerfRecord(getTaskGroupId(), getTaskId(), PerfRecord.PHASE.READ_TASK_DATA);
             dataPerfRecord.start();
+            // 如: com.alibaba.datax.plugin.reader.mysqlreader.MysqlReader.Task.startRead 调用这个方法
             taskReader.startRead(recordSender);
             recordSender.terminate();
 

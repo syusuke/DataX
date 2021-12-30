@@ -1,0 +1,6 @@
+{
+    "name": "mysqlwriterdg",
+    "class": "com.alibaba.datax.plugin.writer.mysqlwriterdg.MysqlWriterDg",
+    "description": "useScene: prod. mechanism: Jdbc connection using the database, execute insert sql. warn: The more you know about the database, the less problems you encounter.",
+    "developer": "kerryzhang"
+}

@@ -91,7 +91,7 @@ public class BufferedRecordTransformerExchanger extends TransformerExchanger imp
 
         record = doTransformer(record);
 
-        if(record == null){
+        if (record == null) {
             return;
         }
 

@@ -20,6 +20,7 @@ public class TransformerUtil {
     private static final Logger LOG = LoggerFactory.getLogger(TransformerUtil.class);
 
     public static List<TransformerExecution> buildTransformerInfo(Configuration taskConfig) {
+        // 获取自定义转换器 by name
         List<Configuration> tfConfigs = taskConfig.getListConfiguration(CoreConstant.JOB_TRANSFORMER);
         if (tfConfigs == null || tfConfigs.size() == 0) {
             return null;
@@ -34,9 +35,11 @@ public class TransformerUtil {
         for (Configuration configuration : tfConfigs) {
             String functionName = configuration.getString("name");
             if (StringUtils.isEmpty(functionName)) {
+                // transformer.name 配置不对
                 throw DataXException.asDataXException(TransformerErrorCode.TRANSFORMER_CONFIGURATION_ERROR, "config=" + configuration.toJSON());
             }
 
+            // 不能是 这个名字
             if (functionName.equals("dx_groovy") && functionNames.contains("dx_groovy")) {
                 throw DataXException.asDataXException(TransformerErrorCode.TRANSFORMER_CONFIGURATION_ERROR, "dx_groovy can be invoke once only.");
             }
@@ -44,7 +47,7 @@ public class TransformerUtil {
         }
 
         /**
-         * 延迟load 第三方插件的function，并按需load
+         * 延迟load 第三方插件的function，并按需load 并注册到TransformerRegistry
          */
         LOG.info(String.format(" user config tranformers [%s], loading...", functionNames));
         TransformerRegistry.loadTransformerFromLocalStorage(functionNames);
@@ -66,6 +69,7 @@ public class TransformerUtil {
              * groovy function仅仅只有code
              */
             if (!functionName.equals("dx_groovy") && !functionName.equals("dx_fackGroovy")) {
+                // 正常的 transformer 名字
                 Integer columnIndex = configuration.getInt(CoreConstant.TRANSFORMER_PARAMETER_COLUMNINDEX);
 
                 if (columnIndex == null) {
@@ -78,6 +82,7 @@ public class TransformerUtil {
                     transformerExecutionParas.setParas(paras.toArray(new String[0]));
                 }
             } else {
+                // groovy code 字段
                 String code = configuration.getString(CoreConstant.TRANSFORMER_PARAMETER_CODE);
                 if (StringUtils.isEmpty(code)) {
                     throw DataXException.asDataXException(TransformerErrorCode.TRANSFORMER_ILLEGAL_PARAMETER, "groovy code must be set by UDF:name=" + functionName);
@@ -89,6 +94,7 @@ public class TransformerUtil {
                     transformerExecutionParas.setExtraPackage(extraPackage);
                 }
             }
+            // parameter.context is a Map
             transformerExecutionParas.settContext(configuration.getMap(CoreConstant.TRANSFORMER_PARAMETER_CONTEXT));
 
             TransformerExecution transformerExecution = new TransformerExecution(transformerInfo, transformerExecutionParas);

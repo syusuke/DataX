@@ -49,6 +49,7 @@ public class RecordExchanger extends TransformerExchanger implements RecordSende
 		this.channel = channel;
 		this.configuration = channel.getConfiguration();
 		try {
+            // 这里还可以配置 RECORD_CLASS ?
 			RecordExchanger.RECORD_CLASS = (Class<? extends Record>) Class
 					.forName(configuration.getString(
                             CoreConstant.DATAX_CORE_TRANSPORT_RECORD_CLASS,
@@ -83,6 +84,7 @@ public class RecordExchanger extends TransformerExchanger implements RecordSende
 		if(shutdown){
 			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
 		}
+        // Transformer 转换对象
 		record = doTransformer(record);
 		if (record == null) {
 			return;

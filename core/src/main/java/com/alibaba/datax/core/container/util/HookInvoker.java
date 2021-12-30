@@ -67,6 +67,7 @@ public class HookInvoker {
         try {
             JarLoader jarLoader = new JarLoader(new String[]{path});
             Thread.currentThread().setContextClassLoader(jarLoader);
+            // SPI Load Hook 的子类 Hook 子类必须的空构造方法
             Iterator<Hook> hookIt = ServiceLoader.load(Hook.class).iterator();
             if (!hookIt.hasNext()) {
                 LOG.warn("No hook defined under path: " + path);

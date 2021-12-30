@@ -100,12 +100,17 @@ public class JobContainer extends AbstractContainer {
         boolean isDryRun = false;
         try {
             this.startTimeStamp = System.currentTimeMillis();
+            // 这个配置不知道做什么的, 在 job/job.json 中配置的.默认 false
             isDryRun = configuration.getBool(CoreConstant.DATAX_JOB_SETTING_DRYRUN, false);
-            if(isDryRun) {
+            if (isDryRun) {
                 LOG.info("jobContainer starts to do preCheck ...");
                 this.preCheck();
             } else {
                 userConf = configuration.clone();
+
+                // 以下为 Job 的生命周期
+
+                // 有 前置插件的话
                 LOG.debug("jobContainer starts to do preHandle ...");
                 this.preHandle();
 
@@ -115,15 +120,19 @@ public class JobContainer extends AbstractContainer {
                 this.prepare();
                 LOG.info("jobContainer starts to do split ...");
                 this.totalStage = this.split();
+
+
                 LOG.info("jobContainer starts to do schedule ...");
+                // 调度方法 -- main
                 this.schedule();
+
                 LOG.debug("jobContainer starts to do post ...");
                 this.post();
 
                 LOG.debug("jobContainer starts to do postHandle ...");
                 this.postHandle();
                 LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
-
+                // 调用 hook
                 this.invokeHooks();
             }
         } catch (Throwable e) {
@@ -162,7 +171,7 @@ public class JobContainer extends AbstractContainer {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         } finally {
-            if(!isDryRun) {
+            if (!isDryRun) {
 
                 this.destroy();
                 this.endTimeStamp = System.currentTimeMillis();
@@ -312,7 +321,7 @@ public class JobContainer extends AbstractContainer {
     private void preHandle() {
         String handlerPluginTypeStr = this.configuration.getString(
                 CoreConstant.DATAX_JOB_PREHANDLER_PLUGINTYPE);
-        if(!StringUtils.isNotEmpty(handlerPluginTypeStr)){
+        if (!StringUtils.isNotEmpty(handlerPluginTypeStr)) {
             return;
         }
         PluginType handlerPluginType;
@@ -327,6 +336,7 @@ public class JobContainer extends AbstractContainer {
         String handlerPluginName = this.configuration.getString(
                 CoreConstant.DATAX_JOB_PREHANDLER_PLUGINNAME);
 
+        // 只能是一个
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 handlerPluginType, handlerPluginName));
 
@@ -348,7 +358,7 @@ public class JobContainer extends AbstractContainer {
         String handlerPluginTypeStr = this.configuration.getString(
                 CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINTYPE);
 
-        if(!StringUtils.isNotEmpty(handlerPluginTypeStr)){
+        if (!StringUtils.isNotEmpty(handlerPluginTypeStr)) {
             return;
         }
         PluginType handlerPluginType;
@@ -398,7 +408,7 @@ public class JobContainer extends AbstractContainer {
 
         List<Configuration> transformerList = this.configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
 
-        LOG.debug("transformer configuration: "+ JSON.toJSONString(transformerList));
+        LOG.debug("transformer configuration: " + JSON.toJSONString(transformerList));
         /**
          * 输入是reader和writer的parameter list，输出是content下面元素的list
          */
@@ -406,7 +416,7 @@ public class JobContainer extends AbstractContainer {
                 readerTaskConfigs, writerTaskConfigs, transformerList);
 
 
-        LOG.debug("contentConfig configuration: "+ JSON.toJSONString(contentConfig));
+        LOG.debug("contentConfig configuration: " + JSON.toJSONString(contentConfig));
 
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
 
@@ -513,7 +523,9 @@ public class JobContainer extends AbstractContainer {
         ExecuteMode executeMode = null;
         AbstractScheduler scheduler;
         try {
-        	executeMode = ExecuteMode.STANDALONE;
+            // 这里怎么写死 standalone ??
+            executeMode = ExecuteMode.STANDALONE;
+            // com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator
             scheduler = initStandaloneScheduler(this.configuration);
 
             //设置 executeMode
@@ -528,10 +540,12 @@ public class JobContainer extends AbstractContainer {
                 }
             }
 
+            // 单机模式
             LOG.info("Running by {} Mode.", executeMode);
 
             this.startTransferTimeStamp = System.currentTimeMillis();
 
+            // 正式开始运行调度 --> job 入口 com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator
             scheduler.schedule(taskGroupConfigs);
 
             this.endTransferTimeStamp = System.currentTimeMillis();
@@ -552,7 +566,6 @@ public class JobContainer extends AbstractContainer {
     private AbstractScheduler initStandaloneScheduler(Configuration configuration) {
         AbstractContainerCommunicator containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
         super.setContainerCommunicator(containerCommunicator);
-
         return new StandAloneScheduler(containerCommunicator);
     }
 
@@ -655,21 +668,27 @@ public class JobContainer extends AbstractContainer {
             JobPluginCollector jobPluginCollector) {
         this.readerPluginName = this.configuration.getString(
                 CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
+
+        // class loader
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
 
+        // 通过name,反射获取 Reader.Job 的子类的实例
         Reader.Job jobReader = (Reader.Job) LoadUtil.loadJobPlugin(
                 PluginType.READER, this.readerPluginName);
 
-        // 设置reader的jobConfig
+        // 设置reader的jobConfig parameter
         jobReader.setPluginJobConf(this.configuration.getConfiguration(
                 CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
 
+        // kerry zhang 这里暂时不是理解,这里把 writer 的配置设置到了 reader 里???
         // 设置reader的readerConfig
         jobReader.setPeerPluginJobConf(this.configuration.getConfiguration(
                 CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER));
 
+        // 设置 jobPluginCollector
         jobReader.setJobPluginCollector(jobPluginCollector);
+        // 调用初始化方法
         jobReader.init();
 
         classLoaderSwapper.restoreCurrentThreadClassLoader();
@@ -797,7 +816,7 @@ public class JobContainer extends AbstractContainer {
             taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
                     writerTasksConfigs.get(i));
 
-            if(transformerConfigs!=null && transformerConfigs.size()>0){
+            if (transformerConfigs != null && transformerConfigs.size() > 0) {
                 taskConfig.set(CoreConstant.JOB_TRANSFORMER, transformerConfigs);
             }
 

@@ -50,6 +50,8 @@ public class TransformerExecution {
          * 其他function，按照columnIndex和para的顺序，如果columnIndex为空，跳过conlumnIndex
          */
         if (transformerExecutionParas.getColumnIndex() != null) {
+            // 参数开始的位置, 这里应该设置为 1 ,否则中间会有很多 null 参数
+            // 第 0 个参数为 ColumnIndex
             if (transformerExecutionParas.getParas() != null) {
                 finalParas = new Object[transformerExecutionParas.getParas().length + 1];
                 System.arraycopy(transformerExecutionParas.getParas(), 0, finalParas, 1, transformerExecutionParas.getParas().length);
@@ -59,6 +61,7 @@ public class TransformerExecution {
             finalParas[0] = transformerExecutionParas.getColumnIndex();
 
         } else {
+            // 没有ColumnIndex 就跳过 ColumnIndex 参数,直接从参数开始算
             if (transformerExecutionParas.getParas() != null) {
                 finalParas = transformerExecutionParas.getParas();
             } else {

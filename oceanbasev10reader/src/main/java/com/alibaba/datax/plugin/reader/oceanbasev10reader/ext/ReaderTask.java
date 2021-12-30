@@ -1,13 +1,5 @@
 package com.alibaba.datax.plugin.reader.oceanbasev10reader.ext;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordSender;
@@ -24,6 +16,13 @@ import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.Config;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.util.ObReaderUtils;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.util.TaskContext;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ReaderTask extends CommonRdbmsReader.Task {
     private static final Logger LOG = LoggerFactory.getLogger(ReaderTask.class);
@@ -46,6 +45,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
         this.taskId = taskId;
     }
 
+    @Override
     public void init(Configuration readerSliceConfig) {
         /* for database connection */
         username = readerSliceConfig.getString(Key.USERNAME);

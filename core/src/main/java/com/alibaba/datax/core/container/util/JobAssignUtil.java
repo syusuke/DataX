@@ -20,14 +20,17 @@ public final class JobAssignUtil {
     public static List<Configuration> assignFairly(Configuration configuration, int channelNumber, int channelsPerTaskGroup) {
         Validate.isTrue(configuration != null, "框架获得的 Job 不能为 null.");
 
+        // 至少一个 job.content[]
         List<Configuration> contentConfig = configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
         Validate.isTrue(contentConfig.size() > 0, "框架获得的切分后的 Job 无内容.");
 
         Validate.isTrue(channelNumber > 0 && channelsPerTaskGroup > 0,
                 "每个channel的平均task数[averTaskPerChannel]，channel数目[channelNumber]，每个taskGroup的平均channel数[channelsPerTaskGroup]都应该为正数");
 
+        // 任务分级数量
         int taskGroupNumber = (int) Math.ceil(1.0 * channelNumber / channelsPerTaskGroup);
 
+        // 第一个 job.content
         Configuration aTaskConfig = contentConfig.get(0);
 
         String readerResourceMark = aTaskConfig.getString(CoreConstant.JOB_READER_PARAMETER + "." +
@@ -41,6 +44,7 @@ public final class JobAssignUtil {
         if (!hasLoadBalanceResourceMark) {
             // fake 一个固定的 key 作为资源标识（在 reader 或者 writer 上均可，此处选择在 reader 上进行 fake）
             for (Configuration conf : contentConfig) {
+                // 设置当前 content 已经读取过了.
                 conf.set(CoreConstant.JOB_READER_PARAMETER + "." +
                         CommonConstant.LOAD_BALANCE_RESOURCE_MARK, "aFakeResourceMarkForLoadBalance");
             }
@@ -83,6 +87,7 @@ public final class JobAssignUtil {
         LinkedHashMap<String, List<Integer>> writerResourceMarkAndTaskIdMap = new LinkedHashMap<String, List<Integer>>();
 
         for (Configuration aTaskConfig : contentConfig) {
+            // 获取 job.content.taskId
             int taskId = aTaskConfig.getInt(CoreConstant.TASK_ID);
             // 把 readerResourceMark 加到 readerResourceMarkAndTaskIdMap 中
             String readerResourceMark = aTaskConfig.getString(CoreConstant.JOB_READER_PARAMETER + "." + CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
@@ -127,9 +132,11 @@ public final class JobAssignUtil {
      * </pre>
      */
     private static List<Configuration> doAssign(LinkedHashMap<String, List<Integer>> resourceMarkAndTaskIdMap, Configuration jobConfiguration, int taskGroupNumber) {
+        // job.content
         List<Configuration> contentConfig = jobConfiguration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
 
         Configuration taskGroupTemplate = jobConfiguration.clone();
+        // remove content
         taskGroupTemplate.remove(CoreConstant.DATAX_JOB_CONTENT);
 
         List<Configuration> result = new LinkedList<Configuration>();
@@ -141,6 +148,7 @@ public final class JobAssignUtil {
 
         int mapValueMaxLength = -1;
 
+        // 对齐
         List<String> resourceMarks = new ArrayList<String>();
         for (Map.Entry<String, List<Integer>> entry : resourceMarkAndTaskIdMap.entrySet()) {
             resourceMarks.add(entry.getKey());

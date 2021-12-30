@@ -53,6 +53,8 @@ public class WriterRunner extends AbstractRunner implements Runnable {
 
             PerfRecord dataPerfRecord = new PerfRecord(getTaskGroupId(), getTaskId(), PerfRecord.PHASE.WRITE_TASK_DATA);
             dataPerfRecord.start();
+
+            // 如: com.alibaba.datax.plugin.writer.mysqlwriter.MysqlWriter.Task.startWrite
             taskWriter.startWrite(recordReceiver);
 
             dataPerfRecord.addCount(CommunicationTool.getTotalReadRecords(super.getRunnerCommunication()));

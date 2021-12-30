@@ -5,7 +5,7 @@ import com.alibaba.datax.core.statistics.container.communicator.AbstractContaine
 /**
  * Created by hongjiao.hj on 2014/12/22.
  */
-public class StandAloneScheduler extends ProcessInnerScheduler{
+public class StandAloneScheduler extends ProcessInnerScheduler {
 
     public StandAloneScheduler(AbstractContainerCommunicator containerCommunicator) {
         super(containerCommunicator);
