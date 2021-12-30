@@ -66,7 +66,6 @@ public class MysqlWriter extends Writer {
             this.writerSliceConfig = super.getPluginJobConf();
             this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task(DATABASE_TYPE);
             this.commonRdbmsWriterTask.init(this.writerSliceConfig);
-            System.out.println("LOVE>>>>>>>>>>" + getTaskPluginCollector());
         }
 
         @Override

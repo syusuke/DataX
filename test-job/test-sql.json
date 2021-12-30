@@ -1,0 +1,66 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "mysqlreader",
+          "parameter": {
+            "username": "root",
+            "password": "123456",
+            "splitPk": "",
+            "connection": [
+              {
+                "querySql": [
+                  "select * from t_source"
+                ],
+                "jdbcUrl": [
+                  "jdbc:mysql://127.0.0.1:33060/datax?useSSL=false"
+                ]
+              }
+            ]
+          }
+        },
+        "transformer": [
+          {
+            "name": "dx_groovy",
+            "parameter": {
+              "code": "Column name = record.getColumn(0); def encryptName = SM4Util.encryptStringAsHex(name.asString()); record.setColumn(0, new StringColumn(encryptName)); return record;",
+              "extraPackage": [
+                "import groovy.json.JsonSlurper;",
+                "import com.digitalgd.ed.sm4.SM4Util;"
+              ]
+            }
+          }
+        ],
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "username": "root",
+            "password": "123456",
+            "column": [
+              "`name`",
+              "`sex`"
+            ],
+            "connection": [
+              {
+                "table": [
+                  "t_target"
+                ],
+                "jdbcUrl": "jdbc:mysql://127.0.0.1:33060/datax?useSSL=false"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

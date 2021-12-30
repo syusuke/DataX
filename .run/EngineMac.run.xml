@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="EngineMac" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.alibaba.datax.core.Engine" />
+    <module name="datax-core" />
+    <option name="PROGRAM_PARAMETERS" value="-mode standalone -jobid -1 -job $PROJECT_DIR$/test-job/my.json" />
+    <option name="VM_PARAMETERS" value="-Ddatax.home=$PROJECT_DIR$/target/datax/datax" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="com.alibaba.datax.core.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

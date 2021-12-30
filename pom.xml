@@ -97,12 +97,14 @@
         <module>hbase11xsqlwriter</module>
         <module>hbase11xsqlreader</module>
         <module>elasticsearchwriter</module>
+        <!-- 依赖没找到
         <module>tsdbwriter</module>
+        <module>oscarwriter</module>
+        -->
         <module>adbpgwriter</module>
         <module>gdbwriter</module>
         <module>cassandrawriter</module>
         <module>clickhousewriter</module>
-        <module>oscarwriter</module>
         <module>oceanbasev10writer</module>
 
         <!-- common support module -->

@@ -10,7 +10,6 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
-import com.alibaba.fastjson.JSON;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -90,7 +89,6 @@ public class MysqlWriterDg extends Writer {
                         preparedStatement = fillPreparedStatement(preparedStatement, record);
                         preparedStatement.execute();
                     } catch (SQLException e) {
-                        System.out.println("失败:::::" + record.getClass() + " - " + JSON.toJSONString(record));
                         PreparedStatement preparedStatement2 = connection.prepareStatement(this.writeErrorRecordSql);
                         try {
                             preparedStatement2 = fillPreparedStatement(preparedStatement2, record);
