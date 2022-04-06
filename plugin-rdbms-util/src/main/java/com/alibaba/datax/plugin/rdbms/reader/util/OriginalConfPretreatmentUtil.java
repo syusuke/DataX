@@ -35,10 +35,10 @@ public final class OriginalConfPretreatmentUtil {
 
     public static void dealWhere(Configuration originalConfig) {
         String where = originalConfig.getString(Key.WHERE, null);
-        if(StringUtils.isNotBlank(where)) {
+        if (StringUtils.isNotBlank(where)) {
             String whereImprove = where.trim();
-            if(whereImprove.endsWith(";") || whereImprove.endsWith("；")) {
-                whereImprove = whereImprove.substring(0,whereImprove.length()-1);
+            if (whereImprove.endsWith(";") || whereImprove.endsWith("；")) {
+                whereImprove = whereImprove.substring(0, whereImprove.length() - 1);
             }
             originalConfig.set(Key.WHERE, whereImprove);
         }
@@ -66,7 +66,7 @@ public final class OriginalConfPretreatmentUtil {
         String password = originalConfig.getString(Key.PASSWORD);
         boolean checkSlave = originalConfig.getBool(Key.CHECK_SLAVE, false);
         boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
-        boolean isPreCheck = originalConfig.getBool(Key.DRYRUN,false);
+        boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);
@@ -99,7 +99,7 @@ public final class OriginalConfPretreatmentUtil {
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.JDBC_URL), jdbcUrl);
 
-            LOG.info("Available jdbcUrl:{}.",jdbcUrl);
+            LOG.info("Available jdbcUrl:{}.", jdbcUrl);
 
             if (isTableMode) {
                 // table 方式
@@ -223,6 +223,12 @@ public final class OriginalConfPretreatmentUtil {
 
     }
 
+
+    /**
+     * @param originalConfig
+     * @return
+     * @kerryzhang 这里确定了 connection.table,column 和 querySql 不能同时配置
+     */
     private static boolean recognizeTableOrQuerySqlMode(
             Configuration originalConfig) {
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
@@ -237,6 +243,7 @@ public final class OriginalConfPretreatmentUtil {
         boolean isTableMode = false;
         boolean isQuerySqlMode = false;
         for (int i = 0, len = conns.size(); i < len; i++) {
+            // 遍历 connection 列表
             Configuration connConf = Configuration
                     .from(conns.get(i).toString());
             table = connConf.getString(Key.TABLE, null);

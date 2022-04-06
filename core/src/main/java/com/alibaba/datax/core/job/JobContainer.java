@@ -118,6 +118,9 @@ public class JobContainer extends AbstractContainer {
                 this.init();
                 LOG.info("jobContainer starts to do prepare ...");
                 this.prepare();
+
+
+                // 这个方法,reader 时,如果配置的是 column 和table,而不是querySQL,在这个方法中l转换成SQL
                 LOG.info("jobContainer starts to do split ...");
                 this.totalStage = this.split();
 
@@ -400,8 +403,8 @@ public class JobContainer extends AbstractContainer {
             this.needChannelNumber = 1;
         }
 
-        List<Configuration> readerTaskConfigs = this
-                .doReaderSplit(this.needChannelNumber);
+        // @kerryzhang reader column 和 table 转换 => querySQL
+        List<Configuration> readerTaskConfigs = this.doReaderSplit(this.needChannelNumber);
         int taskNumber = readerTaskConfigs.size();
         List<Configuration> writerTaskConfigs = this
                 .doWriterSplit(taskNumber);
@@ -409,7 +412,10 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> transformerList = this.configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
 
         LOG.debug("transformer configuration: " + JSON.toJSONString(transformerList));
+
+
         /**
+         * @kerryzhang 这里读取配置并转换了一些配置 返回增加属性的 contentConfig 并在后面设置回去
          * 输入是reader和writer的parameter list，输出是content下面元素的list
          */
         List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(
@@ -748,8 +754,8 @@ public class JobContainer extends AbstractContainer {
     private List<Configuration> doReaderSplit(int adviceNumber) {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
-        List<Configuration> readerSlicesConfigs =
-                this.jobReader.split(adviceNumber);
+        // @kerryzhang 合并 reader 的配置
+        List<Configuration> readerSlicesConfigs = this.jobReader.split(adviceNumber);
         if (readerSlicesConfigs == null || readerSlicesConfigs.size() <= 0) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
@@ -792,6 +798,14 @@ public class JobContainer extends AbstractContainer {
         return mergeReaderAndWriterTaskConfigs(readerTasksConfigs, writerTasksConfigs, null);
     }
 
+    /**
+     * content 下有三种子结点 reader,writer,transformer
+     *
+     * @param readerTasksConfigs reader
+     * @param writerTasksConfigs writer
+     * @param transformerConfigs transformer
+     * @return
+     */
     private List<Configuration> mergeReaderAndWriterTaskConfigs(
             List<Configuration> readerTasksConfigs,
             List<Configuration> writerTasksConfigs,
@@ -807,16 +821,21 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> contentConfigs = new ArrayList<Configuration>();
         for (int i = 0; i < readerTasksConfigs.size(); i++) {
             Configuration taskConfig = Configuration.newDefault();
+            // 复制 reader.name
             taskConfig.set(CoreConstant.JOB_READER_NAME,
                     this.readerPluginName);
+            // 复制 reader.parameter 下所有
             taskConfig.set(CoreConstant.JOB_READER_PARAMETER,
                     readerTasksConfigs.get(i));
+            // 复制 writer.name
             taskConfig.set(CoreConstant.JOB_WRITER_NAME,
                     this.writerPluginName);
+            // 复制 writer.parameter 下所有
             taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
                     writerTasksConfigs.get(i));
 
             if (transformerConfigs != null && transformerConfigs.size() > 0) {
+                // 原样复制 transformer 下所有的JSON
                 taskConfig.set(CoreConstant.JOB_TRANSFORMER, transformerConfigs);
             }
 

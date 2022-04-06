@@ -31,11 +31,22 @@ public final class ReaderSplitUtil {
         String column = originalSliceConfig.getString(Key.COLUMN);
         String where = originalSliceConfig.getString(Key.WHERE, null);
 
+        /*
+        reader.connection 是列表
+        [
+            {
+                "table": [        ],
+                "jdbcUrl": [        ]
+            }
+        ]
+         */
+        // originalSliceConfig 为reader下的配置
         List<Object> conns = originalSliceConfig.getList(Constant.CONN_MARK, Object.class);
 
         List<Configuration> splittedConfigs = new ArrayList<Configuration>();
 
         for (int i = 0, len = conns.size(); i < len; i++) {
+            // 复制一个新的配置
             Configuration sliceConfig = originalSliceConfig.clone();
 
             Configuration connConf = Configuration.from(conns.get(i).toString());

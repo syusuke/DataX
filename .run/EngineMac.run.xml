@@ -2,7 +2,7 @@
   <configuration default="false" name="EngineMac" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="com.alibaba.datax.core.Engine" />
     <module name="datax-core" />
-    <option name="PROGRAM_PARAMETERS" value="-mode standalone -jobid -1 -job $PROJECT_DIR$/test-job/my.json" />
+    <option name="PROGRAM_PARAMETERS" value="-mode standalone -jobid -1 -job $PROJECT_DIR$/test-job/my2.json" />
     <option name="VM_PARAMETERS" value="-Ddatax.home=$PROJECT_DIR$/target/datax/datax" />
     <extension name="coverage">
       <pattern>

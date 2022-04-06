@@ -46,6 +46,7 @@ public class MysqlReader extends Reader {
 
         @Override
         public List<Configuration> split(int adviceNumber) {
+            // @kerryzhang 参数转换
             return this.commonRdbmsReaderJob.split(this.originalConfig, adviceNumber);
         }
 

@@ -83,6 +83,7 @@ public abstract class TransformerExchanger {
             }
 
             try {
+                // record
                 result = transformerInfoExec.getTransformer().evaluate(result, transformerInfoExec.gettContext(), transformerInfoExec.getFinalParas());
             } catch (Exception e) {
                 errorMsg = String.format("transformer(%s) has Exception(%s)", transformerInfoExec.getTransformerName(),
